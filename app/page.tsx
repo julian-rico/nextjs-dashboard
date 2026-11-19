@@ -3,7 +3,13 @@ import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import styles from '@/app/ui/home.module.css';
 import { lusitana } from '@/app/ui/fonts';
-import Image from 'next/image';
+import { getImageProps } from 'next/image';
+
+// One <picture> so each device downloads only its own hero image.
+const {
+  props: { srcSet: desktopSrcSet },
+} = getImageProps({ src: '/hero-desktop.png', width: 1000, height: 760, alt: '' });
+const { props: mobileImgProps } = getImageProps({ src: '/hero-mobile.png', width: 560, height: 620, alt: '', loading: 'eager' });
 
 export default function Page() {
   return (
@@ -32,20 +38,15 @@ export default function Page() {
           </Link>
         </div>
         <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
-          <Image
-            src="/hero-desktop.png"
-            width={1000}
-            height={760}
-            className="hidden md:block"
-            alt="Screenshots of the dashboard project showing desktop version"
-          />
-          <Image
-            src="/hero-mobile.png"
-            width={560}
-            height={620}
-            className="block md:hidden"
-            alt="Screenshot of the dashboard project showing mobile version"
-          />
+          <picture>
+            <source media="(min-width: 768px)" srcSet={desktopSrcSet} />
+            <img
+              {...mobileImgProps}
+              alt="Screenshots of the dashboard project"
+              fetchPriority="high"
+              className="h-auto w-full max-w-[560px] md:max-w-[1000px]"
+            />
+          </picture>
         </div>
       </div>
     </main>
