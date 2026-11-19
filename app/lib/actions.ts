@@ -29,10 +29,28 @@ export type State = {
     status?: string[];
   };
   message?: string | null;
+  // Submitted values, so the form can restore them after a failed submit
+  // (React 19 resets the form after each action).
+  values?: InvoiceFormValues;
 };
+
+type InvoiceFormValues = {
+  customerId: string;
+  amount: string;
+  status: string;
+};
+
+function getInvoiceFormValues(formData: FormData): InvoiceFormValues {
+  return {
+    customerId: String(formData.get('customerId') ?? ''),
+    amount: String(formData.get('amount') ?? ''),
+    status: String(formData.get('status') ?? ''),
+  };
+}
 
 export async function createInvoice(prevState: State, formData: FormData) {
   // Validate form using Zod
+  const values = getInvoiceFormValues(formData);
   const validatedFields = CreateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
@@ -44,6 +62,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'Missing Fields. Failed to Create Invoice.',
+      values,
     };
   }
 
@@ -62,6 +81,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
     // If a database error occurs, return a more specific error.
     return {
       message: 'Database Error: Failed to Create Invoice.',
+      values,
     };
   }
 
@@ -77,6 +97,7 @@ export async function updateInvoice(
   prevState: State,
   formData: FormData,
 ) {
+  const values = getInvoiceFormValues(formData);
   const validatedFields = UpdateInvoice.safeParse({
     customerId: formData.get('customerId'),
     amount: formData.get('amount'),
@@ -87,6 +108,7 @@ export async function updateInvoice(
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'Missing Fields. Failed to Update Invoice.',
+      values,
     };
   }
 
@@ -100,7 +122,7 @@ export async function updateInvoice(
       WHERE id = ${id}
     `;
   } catch (error) {
-    return { message: 'Database Error: Failed to Update Invoice.' };
+    return { message: 'Database Error: Failed to Update Invoice.', values };
   }
 
   revalidatePath('/dashboard/invoices');
